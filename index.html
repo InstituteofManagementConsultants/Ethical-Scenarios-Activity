@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISO 200700: Ethical Practices Activity</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for drag-and-drop */
+        .scenario-card, .principle-card {
+            transition: all 0.2s ease-in-out;
+            cursor: grab;
+        }
+        .principle-card:active {
+            cursor: grabbing;
+            opacity: 0.8;
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* Style for the drop zone when a valid item is dragged over it */
+        .drop-zone.drag-over {
+            background-color: #f2d98d; /* Light Yellow */
+            border-style: dashed;
+            border-color: #d98e04; /* Dark Yellow */
+        }
+        /* Style for correctly matched items */
+        .drop-zone.correct {
+            background-color: #025159; /* Dark Teal */
+            color: #f2f2f2; /* Light Grey */
+            border-color: #025159; /* Dark Teal */
+            border-style: solid; /* Change from dashed */
+            cursor: not-allowed;
+            font-weight: 600;
+            /* This ensures text is centered vertically */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem; /* Add a little padding */
+        }
+        /* Style for incorrectly matched items */
+        .drop-zone.incorrect {
+            background-color: #f8d7da; /* Bootstrap danger-light */
+            border-color: #dc3545; /* Bootstrap danger */
+        }
+        /* Style for the draggable item being moved */
+        .dragging {
+            opacity: 0.5;
+            transform: rotate(3deg);
+        }
+        /* Hide element from screen but not from screen readers */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+    <!-- Configure Tailwind with brand colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-light-blue': '#96ccd9',
+                        'brand-dark-teal': '#025159',
+                        'brand-light-yellow': '#f2d98d',
+                        'brand-dark-yellow': '#d98e04',
+                        'brand-light-grey': '#f2f2f2',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+<body class="bg-brand-light-grey font-sans antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <!-- Header -->
+        <header class="mb-8 p-6 bg-brand-dark-teal text-white rounded-lg shadow-md">
+            <h1 class="text-3xl md:text-4xl font-bold">ISO 200700: Ethical Practices Activity</h1>
+            <p class="mt-2 text-lg text-brand-light-blue">Drag the ethical principle to the matching scenario.</p>
+        </header>
+
+        <!-- Main Content: Scenarios and Principles -->
+        <main class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Scenarios Column -->
+            <div class="flex-grow lg:w-3/5 space-y-4">
+                <h2 class="text-2xl font-semibold text-brand-dark-teal">Scenarios</h2>
+                <p class="text-gray-700">Read each scenario and identify the primary ethical principle at stake.</p>
+                
+                <!-- Scenario List -->
+                <div id="scenario-list" class="space-y-6">
+                    <!-- Scenarios will be injected here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Principles Column (Draggable Items) -->
+            <aside class="lg:w-2/5 p-6 bg-white rounded-lg shadow-lg" style="align-self: flex-start;">
+                <h2 class="text-2xl font-semibold text-brand-dark-teal mb-4">Ethical Principles</h2>
+                <p class="text-gray-700 mb-6">Drag these principles to the correct drop zone on the left.</p>
+                
+                <div id="principle-bank" class="space-y-4">
+                    <!-- Draggable principles will be injected here by JavaScript -->
+                </div>
+            </aside>
+
+        </main>
+
+        <!-- Feedback and Reset Section -->
+        <footer class="mt-8 text-center">
+            <button id="reset-button" class="bg-brand-dark-yellow text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-brand-dark-yellow focus:ring-opacity-50">
+                Reset Activity
+            </button>
+            <p id="feedback-message" class="mt-4 text-xl font-medium h-6" aria-live="polite"></p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. Data Definitions ---
+
+            const ethicalData = [
+                {
+                    id: 'p1',
+                    principle: 'Conflict of Interest',
+                    scenario: 'A consultant is advising a client on software procurement. The consultant\'s spouse is a major shareholder in one of the software companies bidding for the contract.',
+                    scenarioId: 's1'
+                },
+                {
+                    id: 'p2',
+                    principle: 'Confidentiality',
+                    scenario: 'After a project, a consultant includes specific, sensitive financial figures from the client\'s project in a public blog post to showcase their success, without client permission.',
+                    scenarioId: 's2'
+                },
+                {
+                    id: 'p3',
+                    principle: 'Competence & Capability',
+                    scenario: 'A consultant is offered a high-paying project to implement a complex AI system. The consultant has no prior experience with this technology but accepts the project, planning to "learn on the job" without informing the client.',
+                    scenarioId: 's3'
+                },
+                {
+                    id: 'p4',
+                    principle: 'Integrity & Objectivity',
+                    scenario: 'A client pressures a consultant to alter data in a final report to make a project\'s outcome look more successful. The client hints that future contracts depend on this "small adjustment".',
+                    scenarioId: 's4'
+                },
+                {
+                    id: 'p5',
+                    principle: 'Social Responsibility & Public Interest',
+                    scenario: 'A consultant\'s analysis shows a client\'s proposed factory will meet minimum legal environmental standards but will still release significant (though legal) pollutants in a residential area. The consultant knows a slightly more expensive, cleaner alternative exists but doesn\'t mention it.',
+                    scenarioId: 's5'
+                }
+            ];
+
+            // --- 2. State Variables ---
+            
+            let draggedItem = null; // The element being dragged
+            let correctMatches = 0;
+            const totalMatches = ethicalData.length;
+            let focusedDropZone = null; // For keyboard nav
+
+            // --- 3. UI Element References ---
+
+            const scenarioList = document.getElementById('scenario-list');
+            const principleBank = document.getElementById('principle-bank');
+            const resetButton = document.getElementById('reset-button');
+            const feedbackMessage = document.getElementById('feedback-message');
+
+            // --- 4. Initialization Function ---
+
+            function initializeActivity() {
+                // Reset state
+                correctMatches = 0;
+                draggedItem = null;
+                focusedDropZone = null;
+                feedbackMessage.textContent = '';
+                feedbackMessage.classList.remove('text-green-600', 'text-red-600');
+                scenarioList.innerHTML = '';
+                principleBank.innerHTML = '';
+
+                // Create shuffled principles for the bank
+                const principles = shuffleArray(ethicalData.map(item => ({ id: item.id, principle: item.principle })));
+                
+                principles.forEach(item => {
+                    const card = createPrincipleCard(item.id, item.principle);
+                    principleBank.appendChild(card);
+                });
+
+                // Create scenarios
+                ethicalData.forEach(item => {
+                    const scenarioElement = createScenarioElement(item.scenarioId, item.id, item.scenario);
+                    scenarioList.appendChild(scenarioElement);
+                });
+
+                // Add event listeners
+                addDragDropListeners();
+            }
+
+            // --- 5. DOM Creation Functions ---
+
+            function createPrincipleCard(id, principle) {
+                const card = document.createElement('div');
+                card.id = id;
+                card.dataset.id = id;
+                card.draggable = true;
+                card.className = 'principle-card p-4 bg-white border-2 border-brand-light-blue rounded-lg shadow-sm hover:shadow-md hover:border-brand-dark-yellow';
+                card.textContent = principle;
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-grabbed', 'false');
+                card.setAttribute('tabindex', '0'); // Make it focusable
+                return card;
+            }
+
+            function createScenarioElement(scenarioId, correctPrincipleId, scenarioText) {
+                const element = document.createElement('div');
+                element.id = scenarioId;
+                element.className = 'scenario-card p-6 bg-white rounded-lg shadow-md flex flex-col md:flex-row items-start md:items-center gap-4';
+                
+                // Scenario Text
+                const text = document.createElement('p');
+                text.className = 'flex-grow text-gray-800';
+                text.textContent = scenarioText;
+                
+                // Drop Zone
+                const dropZone = document.createElement('div');
+                dropZone.className = 'drop-zone w-full h-20 bg-gray-100 border-2 border-gray-300 border-dashed rounded-lg flex justify-center items-center text-gray-500 transition-all';
+                dropZone.dataset.correctPrinciple = correctPrincipleId;
+                dropZone.textContent = 'Drop Principle Here';
+                dropZone.setAttribute('role', 'region');
+                dropZone.setAttribute('aria-label', `Drop zone for scenario: ${scenarioText}`);
+                dropZone.setAttribute('tabindex', '-1'); // Not focusable by default
+
+                // NEW: Create wrapper for drop zone and feedback
+                const dropWrapper = document.createElement('div');
+                dropWrapper.className = 'drop-zone-wrapper w-full md:w-64 flex-shrink-0';
+
+                // NEW: Create feedback text element
+                const feedbackText = document.createElement('div');
+                feedbackText.className = 'drop-feedback-text h-6 text-sm font-medium mt-1 text-center';
+
+                // Append to wrapper
+                dropWrapper.appendChild(dropZone);
+                dropWrapper.appendChild(feedbackText);
+
+                element.appendChild(text);
+                element.appendChild(dropWrapper); // Append wrapper
+                return element;
+            }
+
+            // --- 6. Event Listener Functions ---
+
+            function addDragDropListeners() {
+                // For draggable items
+                const draggables = document.querySelectorAll('.principle-card');
+                draggables.forEach(item => {
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragend', handleDragEnd);
+                    // Keyboard support
+                    item.addEventListener('keydown', handleKeydown);
+                });
+
+                // For drop zones
+                const dropZones = document.querySelectorAll('.drop-zone');
+                dropZones.forEach(zone => {
+                    zone.addEventListener('dragover', handleDragOver);
+                    zone.addEventListener('dragleave', handleDragLeave);
+                    zone.addEventListener('drop', handleDrop);
+                    // Keyboard support
+                    zone.addEventListener('keydown', handleKeydown); // Allow drop on keydown
+                    zone.addEventListener('focus', () => { focusedDropZone = zone; });
+                    zone.addEventListener('blur', () => { 
+                        zone.classList.remove('drag-over');
+                        if(focusedDropZone === zone) {
+                            focusedDropZone = null;
+                        }
+                    });
+                });
+            }
+            
+            resetButton.addEventListener('click', initializeActivity);
+
+            // --- 7. Drag-and-Drop Handlers ---
+
+            function handleDragStart(e) {
+                // Ensure we're not dragging a correctly placed item
+                if (e.target.closest('.drop-zone.correct')) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedItem = e.target;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', draggedItem.id);
+                setTimeout(() => {
+                    if (draggedItem) { // Check if drag wasn't cancelled
+                        draggedItem.classList.add('dragging'); // Apply style after a delay
+                        draggedItem.setAttribute('aria-grabbed', 'true');
+                    }
+                }, 0);
+            }
+
+            function handleDragEnd() {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem.setAttribute('aria-grabbed', 'false');
+                }
+                // Clear any lingering drag-over styles
+                document.querySelectorAll('.drop-zone.drag-over').forEach(zone => {
+                    zone.classList.remove('drag-over');
+                });
+                draggedItem = null;
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault(); // Necessary to allow dropping
+                const dropZone = e.target.closest('.drop-zone');
+                if (dropZone && !dropZone.classList.contains('correct')) {
+                    dropZone.classList.add('drag-over');
+                    e.dataTransfer.dropEffect = 'move';
+                }
+            }
+
+            function handleDragLeave(e) {
+                const dropZone = e.target.closest('.drop-zone');
+                if (dropZone && e.relatedTarget && !dropZone.contains(e.relatedTarget)) {
+                    dropZone.classList.remove('drag-over');
+                }
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                const dropZone = e.target.closest('.drop-zone');
+                
+                // Check if draggedItem is set (might be null if drag ended improperly)
+                const draggedElement = draggedItem || document.getElementById(e.dataTransfer.getData('text/plain'));
+
+                if (!dropZone || !draggedElement || dropZone.classList.contains('correct')) {
+                    return;
+                }
+
+                dropZone.classList.remove('drag-over');
+
+                // Get the ID of the dragged item
+                const draggedId = draggedElement.dataset.id;
+                const correctId = dropZone.dataset.correctPrinciple;
+
+                // Check for match
+                if (draggedId === correctId) {
+                    handleCorrectMatch(dropZone, draggedElement);
+                } else {
+                    handleIncorrectMatch(dropZone, draggedElement);
+                }
+                draggedItem = null; // Clear after drop
+            }
+            
+            // --- 8. Keyboard Drag-and-Drop Handlers ---
+            
+            let keyboardDraggable = null;
+
+            function handleKeydown(e) {
+                // Space or Enter to pick up/drop
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    if (keyboardDraggable) {
+                        // We are dropping an item
+                        const dropZone = e.target.closest('.drop-zone');
+                        if (dropZone) {
+                            handleKeyboardDrop(dropZone);
+                        }
+                    } else {
+                        // We are picking up an item
+                        const card = e.target.closest('.principle-card');
+                        if (card && !card.closest('.drop-zone.correct')) {
+                            handleKeyboardPickUp(card);
+                        }
+                    }
+                }
+                
+                // Tab to move between drop zones
+                if (e.key === 'Tab' && keyboardDraggable) {
+                    e.preventDefault();
+                    moveFocusToNextDropZone(e.shiftKey); // Pass shift key state
+                }
+                
+                // Escape to cancel drag
+                if (e.key === 'Escape' && keyboardDraggable) {
+                    e.preventDefault();
+                    cancelKeyboardDrag();
+                }
+            }
+            
+            function handleKeyboardPickUp(card) {
+                keyboardDraggable = card;
+                keyboardDraggable.classList.add('dragging'); // Visual cue
+                keyboardDraggable.setAttribute('aria-grabbed', 'true');
+                feedbackMessage.textContent = 'Picked up. Press Tab to cycle drop zones, or Escape to cancel.';
+                moveFocusToNextDropZone(false, true); // Move to the first drop zone
+            }
+            
+            function handleKeyboardDrop(dropZone) {
+                const draggedId = keyboardDraggable.dataset.id;
+                const correctId = dropZone.dataset.correctPrinciple;
+                
+                if (draggedId === correctId) {
+                    handleCorrectMatch(dropZone, keyboardDraggable);
+                    // Move focus to next available principle or scenario
+                    const nextFocusable = document.querySelector('.principle-card[tabindex="0"], .scenario-card');
+                    if(nextFocusable) nextFocusable.focus();
+                } else {
+                    handleIncorrectMatch(dropZone, keyboardDraggable);
+                    keyboardDraggable.focus(); // Return focus to the item
+                }
+                
+                keyboardDraggable.classList.remove('dragging');
+                keyboardDraggable.setAttribute('aria-grabbed', 'false');
+                keyboardDraggable = null;
+                focusedDropZone = null;
+                feedbackMessage.textContent = ''; // Clear help text
+            }
+            
+            function cancelKeyboardDrag() {
+                if (keyboardDraggable) {
+                    feedbackMessage.textContent = 'Drag cancelled.';
+                    keyboardDraggable.classList.remove('dragging');
+                    keyboardDraggable.setAttribute('aria-grabbed', 'false');
+                    
+                    // Return to principle bank if it was in a drop zone
+                    if (keyboardDraggable.parentElement.classList.contains('drop-zone')) {
+                        principleBank.appendChild(keyboardDraggable);
+                        // Reset drop zone text
+                        const dropZone = keyboardDraggable.parentElement;
+                        if (dropZone.childElementCount === 0) {
+                            dropZone.textContent = 'Drop Principle Here';
+                        }
+                    }
+
+                    keyboardDraggable.focus();
+                    keyboardDraggable = null;
+                    focusedDropZone = null;
+                    // Clear help text after a delay
+                    setTimeout(() => {
+                        if (feedbackMessage.textContent === 'Drag cancelled.') {
+                            feedbackMessage.textContent = '';
+                        }
+                    }, 1500);
+                }
+            }
+
+            function moveFocusToNextDropZone(reverse = false, startFromFirst = false) {
+                const zones = Array.from(document.querySelectorAll('.drop-zone:not(.correct)'));
+                if (zones.length === 0) {
+                    cancelKeyboardDrag();
+                    return;
+                }
+
+                // Make zones focusable for this interaction
+                zones.forEach(z => z.setAttribute('tabindex', '0'));
+
+                let nextIndex = 0;
+                if (focusedDropZone && !startFromFirst) {
+                    const currentIndex = zones.indexOf(focusedDropZone);
+                    if (reverse) {
+                        nextIndex = (currentIndex - 1 + zones.length) % zones.length;
+                    } else {
+                        nextIndex = (currentIndex + 1) % zones.length;
+                    }
+                } else if (reverse) {
+                    nextIndex = zones.length - 1; // Start from last if reversing from start
+                }
+
+                focusedDropZone = zones[nextIndex];
+                focusedDropZone.focus();
+                
+                // Add visual cue to focused zone only
+                zones.forEach(z => {
+                    if (z === focusedDropZone) {
+                        z.classList.add('drag-over');
+                    } else {
+                        z.classList.remove('drag-over');
+                    }
+                });
+            }
+
+            // --- 9. Match Handling Logic ---
+
+            function handleCorrectMatch(dropZone, item) {
+                // Set the text of the drop zone to the principle's text
+                dropZone.textContent = item.textContent; 
+                
+                // Style as correct
+                dropZone.classList.add('correct');
+                dropZone.classList.remove('incorrect', 'drag-over');
+                dropZone.setAttribute('aria-label', `Correctly matched: ${item.textContent}`);
+                dropZone.setAttribute('tabindex', '-1'); // No longer part of keyboard drag
+                
+                // The item (principle card) is successfully used, remove it from the DOM.
+                item.remove(); 
+                
+                // NEW: Show local feedback
+                const feedbackEl = dropZone.closest('.drop-zone-wrapper').querySelector('.drop-feedback-text');
+                if (feedbackEl) {
+                    feedbackEl.textContent = 'Correct!';
+                    feedbackEl.classList.add('text-green-600');
+                    feedbackEl.classList.remove('text-red-600');
+                }
+                
+                // Update score
+                correctMatches++;
+                feedbackMessage.classList.remove('text-red-600');
+                
+                // Check for completion
+                if (correctMatches === totalMatches) {
+                    feedbackMessage.textContent = 'Congratulations! You\'ve matched all principles correctly!';
+                    feedbackMessage.classList.add('text-green-600'); // Add green only on completion
+                    // Make sure all drop zones lose focusability
+                    document.querySelectorAll('.drop-zone').forEach(z => z.setAttribute('tabindex', '-1'));
+                }
+            }
+
+            function handleIncorrectMatch(dropZone, item) {
+                // Style as incorrect
+                dropZone.classList.add('incorrect');
+                dropZone.classList.remove('drag-over');
+                
+                // --- FIX ---
+                // Remove the dragging style so it returns to the bank flat
+                item.classList.remove('dragging');
+                item.setAttribute('aria-grabbed', 'false');
+                // --- END FIX ---
+
+                // NEW: Show local feedback
+                const feedbackEl = dropZone.closest('.drop-zone-wrapper').querySelector('.drop-feedback-text');
+                if (feedbackEl) {
+                    feedbackEl.textContent = 'Try Again';
+                    feedbackEl.classList.add('text-red-600');
+                    feedbackEl.classList.remove('text-green-600');
+                }
+
+                // Add item back to the principle bank
+                principleBank.appendChild(item);
+                // Ensure item is focusable again
+                item.setAttribute('tabindex', '0'); 
+
+                // Remove incorrect style after a delay
+                setTimeout(() => {
+                    dropZone.classList.remove('incorrect');
+                    
+                    // NEW: Clear local feedback
+                    if (feedbackEl) {
+                        feedbackEl.textContent = '';
+                        feedbackEl.classList.remove('text-red-600');
+                    }
+                }, 1500);
+            }
+
+            // --- 10. Utility Function ---
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            // --- 11. Initial Call ---
+            initializeActivity();
+
+        });
+    </script>
+
+</body>
+</html>
+
+
