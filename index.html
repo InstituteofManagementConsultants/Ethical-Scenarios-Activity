@@ -228,7 +228,9 @@
             function createScenarioElement(scenarioId, correctPrincipleId, scenarioText) {
                 const element = document.createElement('div');
                 element.id = scenarioId;
-                element.className = 'scenario-card p-6 bg-white rounded-lg shadow-md flex flex-col md:flex-row items-start md:items-center gap-4';
+                // --- FIX for narrow containers ---
+                // Changed md:flex-row to lg:flex-row and md:items-center to lg:items-center
+                element.className = 'scenario-card p-6 bg-white rounded-lg shadow-md flex flex-col lg:flex-row items-start lg:items-center gap-4';
                 
                 // Scenario Text
                 const text = document.createElement('p');
@@ -246,7 +248,9 @@
 
                 // NEW: Create wrapper for drop zone and feedback
                 const dropWrapper = document.createElement('div');
-                dropWrapper.className = 'drop-zone-wrapper w-full md:w-64 flex-shrink-0';
+                // --- FIX for narrow containers ---
+                // Changed md:w-64 to lg:w-64
+                dropWrapper.className = 'drop-zone-wrapper w-full lg:w-64 flex-shrink-0';
 
                 // NEW: Create feedback text element
                 const feedbackText = document.createElement('div');
@@ -585,5 +589,4 @@
 
 </body>
 </html>
-
 
