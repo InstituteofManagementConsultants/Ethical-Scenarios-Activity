@@ -60,6 +60,23 @@
             white-space: nowrap;
             border-width: 0;
         }
+
+        /* NEW: Custom scrollbar for the scenario list */
+        #scenario-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        #scenario-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        #scenario-list::-webkit-scrollbar-thumb {
+            background: #96ccd9; /* brand-light-blue */
+            border-radius: 10px;
+        }
+        #scenario-list::-webkit-scrollbar-thumb:hover {
+            background: #025159; /* brand-dark-teal */
+        }
+
     </style>
     <!-- Configure Tailwind with brand colors -->
     <script>
@@ -92,24 +109,25 @@
         </header>
 
         <!-- Main Content: Scenarios and Principles -->
-        <!-- **** EDITED: Changed lg:flex-row to md:flex-row and added md:flex-row-reverse to put principles on the left **** -->
-        <main class="flex flex-col md:flex-row md:flex-row-reverse gap-8">
+        <!-- **** EDITED: Changed back to md:flex-row-reverse (Principles on left, Scenarios on right) **** -->
+        <main class="flex flex-col md:flex-row-reverse gap-8">
 
             <!-- Scenarios Column -->
-            <!-- **** EDITED: Changed lg:w-3/5 to md:w-3/5 **** -->
+            <!-- **** EDITED: Scenarios on the right, md:w-3/5 **** -->
             <div class="flex-grow md:w-3/5 space-y-4">
                 <h2 class="text-2xl font-semibold text-brand-dark-teal">Scenarios</h2>
                 <p class="text-gray-700">Read each scenario and identify the primary ethical principle at stake.</p>
                 
                 <!-- Scenario List -->
-                <div id="scenario-list" class="space-y-6">
+                <!-- **** EDITED: Added max-h and overflow for scrolling **** -->
+                <div id="scenario-list" class="space-y-6 md:max-h-[70vh] md:overflow-y-auto md:pr-2">
                     <!-- Scenarios will be injected here by JavaScript -->
                 </div>
             </div>
 
             <!-- Principles Column (Draggable Items) -->
-            <!-- **** EDITED: Changed lg:w-2/5 to md:w-2/5 **** -->
-            <aside class="md:w-2/5 p-6 bg-white rounded-lg shadow-lg" style="align-self: flex-start;">
+            <!-- **** EDITED: Principles on the left, md:w-2/5 and sticky **** -->
+            <aside class="md:w-2/5 p-6 bg-white rounded-lg shadow-lg self-start md:sticky md:top-8">
                 <h2 class="text-2xl font-semibold text-brand-dark-teal mb-4">Ethical Principles</h2>
                 <p class="text-gray-700 mb-6">Drag these principles to the correct drop zone on the right.</p>
                 
@@ -231,9 +249,10 @@
             function createScenarioElement(scenarioId, correctPrincipleId, scenarioText) {
                 const element = document.createElement('div');
                 element.id = scenarioId;
-                // --- FIX for narrow containers ---
-                // **** EDITED: Changed lg:flex-row to md:flex-row and lg:items-center to md:items-center ****
-                element.className = 'scenario-card p-6 bg-white rounded-lg shadow-md flex flex-col md:flex-row items-start md:items-center gap-4';
+                // --- REMOVED lg:flex-row ---
+                // This ensures the card ALWAYS stacks vertically (text on top, drop-zone below)
+                // which is what you wanted and fixes the layout in your platform.
+                element.className = 'scenario-card p-6 bg-white rounded-lg shadow-md flex flex-col items-start gap-4'; // ALWAYS vertical stack
                 
                 // Scenario Text
                 const text = document.createElement('p');
@@ -249,13 +268,13 @@
                 dropZone.setAttribute('aria-label', `Drop zone for scenario: ${scenarioText}`);
                 dropZone.setAttribute('tabindex', '-1'); // Not focusable by default
 
-                // NEW: Create wrapper for drop zone and feedback
-                const dropWrapper = document.createElement('div');
-                // --- FIX for narrow containers ---
-                // **** EDITED: Changed lg:w-64 to md:w-64 ****
-                dropWrapper.className = 'drop-zone-wrapper w-full md:w-64 flex-shrink-0';
+                // Create wrapper for drop zone and feedback
+                // --- REMOVED lg:w-64 ---
+                // This now just ensures the wrapper is full-width inside the vertical card
+                dropWrapper = document.createElement('div');
+                dropWrapper.className = 'drop-zone-wrapper w-full flex-shrink-0'; // ALWAYS full width
 
-                // NEW: Create feedback text element
+                // Create feedback text element
                 const feedbackText = document.createElement('div');
                 feedbackText.className = 'drop-feedback-text h-6 text-sm font-medium mt-1 text-center';
 
@@ -333,7 +352,25 @@
 
             function handleDragOver(e) {
                 e.preventDefault(); // Necessary to allow dropping
+                
+                // **** EDITED: Check if dragging over the scrollable scenario list ****
+                const scenarioListDiv = document.getElementById('scenario-list');
                 const dropZone = e.target.closest('.drop-zone');
+
+                // Auto-scroll logic
+                if (scenarioListDiv.contains(e.target)) {
+                    const rect = scenarioListDiv.getBoundingClientRect();
+                    const scrollThreshold = 60; // 60px from top or bottom
+                    
+                    if (e.clientY < rect.top + scrollThreshold) {
+                        // Scroll up
+                        scenarioListDiv.scrollTop -= 10;
+                    } else if (e.clientY > rect.bottom - scrollThreshold) {
+                        // Scroll down
+                        scenarioListDiv.scrollTop += 10;
+                    }
+                }
+
                 if (dropZone && !dropZone.classList.contains('correct')) {
                     dropZone.classList.add('drag-over');
                     e.dataTransfer.dropEffect = 'move';
@@ -592,4 +629,6 @@
 
 </body>
 </html>
+
+
 
